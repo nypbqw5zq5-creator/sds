@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUNKER | ULTIMATE 300 EDITION</title>
+    <style>
+        :root { --yellow: #ffcc00; --black: #000; }
+        * { box-sizing: border-box; transition: 0.3s; }
+        body { background: var(--yellow); color: var(--black); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .hazard { width: 100%; height: 15px; background: repeating-linear-gradient(-45deg, var(--black), var(--black) 10px, #e6b800 10px, #e6b800 20px); border-bottom: 2px solid var(--black); margin-bottom: 20px; animation: hazardScroll 2s linear infinite; }
+        @keyframes hazardScroll { from { background-position: 0 0; } to { background-position: 40px 0; } }
+        .screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 420px; animation: fadeIn 0.4s ease; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .start-img { width: 100%; border: 6px solid var(--black); border-radius: 15px; margin-bottom: 25px; box-shadow: 10px 10px 0px rgba(0,0,0,0.1); }
+        .id-card { width: 100%; background: var(--black); color: var(--yellow); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        .trait-line { border-bottom: 1px solid #222; padding: 12px 0; }
+        .label { font-size: 0.65rem; color: var(--yellow); opacity: 0.5; font-weight: 800; }
+        .val { font-size: 0.9rem; color: #fff; font-weight: 900; margin-top: 5px; text-transform: none; }
+        button { background: var(--black); color: var(--yellow); border: none; padding: 18px; cursor: pointer; font-weight: 900; width: 100%; margin: 8px 0; border-radius: 12px; box-shadow: 0 4px 0px #444; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; flex-direction: column; justify-content: flex-end; }
+        .modal-content { background: var(--black); color: var(--yellow); padding: 25px; width: 100%; max-width: 450px; border-radius: 30px 30px 0 0; max-height: 85vh; overflow-y: auto; }
+        .select-item { padding: 15px; border: 1px solid #333; margin: 10px 0; border-radius: 12px; background: #0a0a0a; text-transform: none; cursor: pointer; }
+        input { background: #fff; border: 4px solid var(--black); padding: 15px; width: 100%; text-align: center; font-size: 1.2rem; border-radius: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="hazard"></div>
+    <div id="lang-screen" class="screen active">
+        <img src="https://znaemigraem.ru/upload/iblock/e5a/qjcsa3sh7q7ktdwk7mf3y778aaxemhf1/bunker_anons.jpg" class="start-img">
+        <button onclick="setLang('ru')">РУССКИЙ</button>
+        <button onclick="setLang('en')">ENGLISH</button>
+        <button onclick="setLang('am')">ՀԱՅԵՐԵՆ</button>
+    </div>
+    <div id="login" class="screen">
+        <h2 id="l-title"></h2>
+        <input type="text" id="nameInput">
+        <button onclick="init()" id="l-btn"></button>
+    </div>
+    <div id="terminal" class="screen">
+        <h3 id="top-name"></h3>
+        <div class="id-card" id="main-card"></div>
+        <button onclick="openTraits()" id="b-reveal"></button>
+        <div style="display:flex; gap:10px; width:100%">
+            <button onclick="toggleModal('m-cat')" id="b-cat"></button>
+            <button onclick="toggleModal('m-bun')" id="b-bun"></button>
+        </div>
+    </div>
+    <div id="m-traits" class="modal"><div class="modal-content"><h3 id="m-title"></h3><div id="traits-options"></div><button onclick="toggleModal('m-traits')" style="color:red">CLOSE</button></div></div>
+    <div id="m-cat" class="modal"><div class="modal-content"><h2 id="h-cat"></h2><p id="cat-text" style="color:white; text-transform:none"></p><button onclick="toggleModal('m-cat')">OK</button></div></div>
+    <div id="m-bun" class="modal"><div class="modal-content"><h2 id="h-bun"></h2><p id="bun-text" style="color:white; text-transform:none"></p><button onclick="toggleModal('m-bun')">OK</button></div></div>
+
+    <script>
+        const i18n = {
+            ru: { labels: ["Профессия", "Биология", "Здоровье", "Хобби", "Багаж", "Факт"], y: "лет", m: "Мужчина", f: "Женщина", lT: "ДОСТУП", lB: "СОЗДАТЬ", lP: "ИМЯ", bR: "ОТКРЫТЬ КАРТУ", bC: "КАТАСТРОФА", bB: "БУНКЕР", cat: "Ядерная зима. Радиация 100%.", bun: "Бункер запечатан на 1 год.", orient: ["Гетеро", "Гомо", "Би", "Асек"] },
+            en: { labels: ["Profession", "Biology", "Health", "Hobby", "Baggage", "Fact"], y: "y/o", m: "Male", f: "Female", lT: "ACCESS", lB: "CREATE", lP: "NAME", bR: "REVEAL CARD", bC: "CATASTROPHE", bB: "SHELTER", cat: "Nuclear winter. 100% Radiation.", bun: "Bunker sealed for 1 year.", orient: ["Hetero", "Homo", "Bi", "Ace"] },
+            am: { labels: ["Մասնագիտություն", "Կենսաբանություն", "Առողջություն", "Հոբբի", "Ուղեբեռ", "Փաստ"], y: "տարեկան", m: "Տղամարդ", f: "Կին", lT: "ՄՈՒՏՔ", lB: "ՍՏԵՂԾԵԼ", lP: "ԱՆՈՒՆ", bR: "ԲԱՑԵԼ ՔԱՐՏԸ", bC: "ԱՂԵՏ", bB: "ԲՈՒՆԿԵՐ", cat: "Միջուկային ձմեռ: Ռադիացիա 100%:", bun: "Բունկերը փակ է 1 տարով:", orient: ["Հետերո", "Հոմո", "Բի", "Ասեքս"] }
+        };
+
+        const db = {
+            profs: [
+                {ru:"Хирург", en:"Surgeon", am:"Վիրաբույժ"}, {ru:"Снайпер", en:"Sniper", am:"Դիպուկահար"}, {ru:"Инженер-ядерщик", en:"Nuclear Engineer", am:"Միջուկային ինժեներ"}, {ru:"Повар", en:"Chef", am:"Խոհարար"}, {ru:"Фермер", en:"Farmer", am:"Ֆերմեր"},
+                {ru:"Пилот", en:"Pilot", am:"Օդաչու"}, {ru:"Программист", en:"Programmer", am:"Ծրագրավորող"}, {ru:"Врач", en:"Doctor", am:"Բժիշկ"}, {ru:"Электрик", en:"Electrician", am:"Էլեկտրիկ"}, {ru:"Слесарь", en:"Locksmith", am:"Փականագործ"},
+                {ru:"Дипломат", en:"Diplomat", am:"Դիվանագետ"}, {ru:"Химик", en:"Chemist", am:"Քիմիկոս"}, {ru:"Биолог", en:"Biologist", am:"Կենսաբան"}, {ru:"Хакер", en:"Hacker", am:"Հաքեր"}, {ru:"Киллер (18+)", en:"Hitman (18+)", am:"Մարդասպան (18+)"},
+                {ru:"Стриптизер (18+)", en:"Stripper (18+)", am:"Ստրիպտիզ պարող"}, {ru:"Священник", en:"Priest", am:"Քահանա"}, {ru:"Адвокат", en:"Lawyer", am:"Փաստաբան"}, {ru:"Полицейский", en:"Police", am:"Ոստիկան"}, {ru:"Учитель", en:"Teacher", am:"Ուսուցիչ"},
+                {ru:"Военный", en:"Soldier", am:"Զինվորական"}, {ru:"Ветеринар", en:"Vet", am:"Անասնաբույժ"}, {ru:"Пожарный", en:"Firefighter", am:"Հրշեջ"}, {ru:"Актер (18+)", en:"Adult Actor", am:"18+ դերասան"}, {ru:"Археолог", en:"Archaeologist", am:"Հնէաբան"},
+                {ru:"Гробовщик", en:"Undertaker", am:"Գերեզմանափոր"}, {ru:"Танкист", en:"Tank Driver", am:"Տանկիստ"}, {ru:"Психолог", en:"Psychologist", am:"Հոգեբան"}, {ru:"Судмедэксперт", en:"Pathologist", am:"Դատաբժիշկ"}, {ru:"Физик", en:"Physicist", am:"Ֆիզիկոս"},
+                {ru:"Наркодилер (18+)", en:"Drug Dealer (18+)", am:"Նարկոդիլեր"}, {ru:"Телохранитель", en:"Bodyguard", am:"Թիկնապահ"}, {ru:"Шпион", en:"Spy", am:"Լրտես"}, {ru:"Мясник", en:"Butcher", am:"Մսագործ"}, {ru:"Механик", en:"Mechanic", am:"Մեխանիկ"},
+                {ru:"Журналист", en:"Journalist", am:"Լրագրող"}, {ru:"Эколог", en:"Ecologist", am:"Էկոլոգ"}, {ru:"Геолог", en:"Geologist", am:"Երկրաբան"}, {ru:"Астроном", en:"Astronomer", am:"Աստղագետ"}, {ru:"Бухгалтер", en:"Accountant", am:"Հաշվապահ"},
+                {ru:"Музыкант", en:"Musician", am:"Երաժիշտ"}, {ru:"Художник", en:"Artist", am:"Նկարիչ"}, {ru:"Портной", en:"Tailor", am:"Դերձակ"}, {ru:"Генетик", am:"Geneticist", en:"Գենետիկ"}, {ru:"Тренер карате", en:"Karate Coach", am:"Կարատեի մարզիչ"},
+                {ru:"Шахтер", en:"Miner", am:"Հանքափոր"}, {ru:"Строитель", en:"Builder", am:"Շինարար"}, {ru:"Сантехник", en:"Plumber", am:"Ջրմուղագործ"}, {ru:"Торговец оружием (18+)", en:"Arms Dealer (18+)", am:"Զենքի վաճառող"}, {ru:"Библиотекарь", en:"Librarian", am:"Գրադարանավար"}
+            ],
+            health: [
+                {ru:"Здоров", en:"Healthy", am:"Առողջ"}, {ru:"Астма", en:"Asthma", am:"Ասթմա"}, {ru:"Диабет", en:"Diabetes", am:"Դիաբետ"}, {ru:"Аллергия на орехи", en:"Nut Allergy", am:"Ալերգիա ընկույզից"},
+                {ru:"Аллергия на пыль", en:"Dust Allergy", am:"Ալերգիա փոշուց"}, {ru:"Аллергия на собак", en:"Dog Allergy", am:"Ալերգիա շներից"}, {ru:"Алкоголизм (18+)", en:"Alcoholism (18+)", am:"Ալկոհոլիզմ (18+)"}, {ru:"ВИЧ+ (18+)", en:"HIV+ (18+)", am:"ՄԻԱՎ+"},
+                {ru:"Шизофрения", en:"Schizophrenia", am:"Շիզոֆրենիա"}, {ru:"Бессонница", en:"Insomnia", am:"Անքնություն"}, {ru:"Слепота", en:"Blindness", am:"Կուրություն"}, {ru:"Психопат (18+)", en:"Psychopath (18+)", am:"Պսիխոպատ (18+)"},
+                {ru:"Наркозависимость (18+)", en:"Drug Addiction (18+)", am:"Նարկոմանիա"}, {ru:"Рак 3 стадии", en:"Stage 3 Cancer", am:"Քաղցկեղ 3-րդ փուլ"}, {ru:"Эպիլեպսիա", en:"Epilepsy", am:"Էպիլեպսիա"}, {ru:"Дальтонизм", en:"Color Blind", am:"Դալթոնիզմ"},
+                {ru:"Глухота", en:"Deafness", am:"Խլություն"}, {ru:"Бесплодие", en:"Infertility", am:"Անպտղություն"}, {ru:"Порок сердца", en:"Heart Disease", am:"Սրտի արատ"}, {ru:"Мигрень", en:"Migraine", am:"Միգրեն"},
+                {ru:"Анемия", en:"Anemia", am:"Անեմիա"}, {ru:"Панические атаки", en:"Panic Attacks", am:"Պանիկայի նոպաներ"}, {ru:"Артрит", en:"Arthritis", am:"Արթրիտ"}, {ru:"Язва желудка", en:"Stomach Ulcer", am:"Ստամոքսի խոց"},
+                {ru:"Туберкулез", en:"Tuberculosis", am:"Տուբերկուլյոզ"}, {ru:"Психоз", en:"Psychosis", am:"Պսիխոզ"}, {ru:"Амнезия", en:"Amnesia", am:"Ամնեզիա"}, {ru:"Паранойя", en:"Paranoia", am:"Պարանոյա"},
+                {ru:"Слабые легкие", en:"Weak Lungs", am:"Թույլ թոքեր"}, {ru:"Высокое давление", en:"High BP", am:"Բարձր ճնշում"}, {ru:"Гепатит С", en:"Hepatitis C", am:"Հեպատիտ Ց"}, {ru:"Отсутствует палец", en:"Missing finger", am:"Մատի բացակայություն"},
+                {ru:"Сломана рука", en:"Broken arm", am:"Կոտրված ձեռք"}, {ru:"Аллергия на латекс", en:"Latex Allergy", am:"Ալերգիա լատեքսից"}, {ru:"Аллергия на пчел", en:"Bee Allergy", am:"Ալերգիա մեղուներից"}, {ru:"Аллергия на глютен", en:"Gluten Allergy", am:"Ալերգիա գլյուտենից"},
+                {ru:"Аллергия на рыбу", en:"Seafood Allergy", am:"Ալերգիա ձկնեղենից"}, {ru:"Аллергия на пыльцу", en:"Pollen Allergy", am:"Ալերգիա ծաղկափոշուց"}, {ru:"Лунатизм", en:"Sleepwalking", am:"Լուսնոտություն"}, {ru:"Синдром Туретта", en:"Tourette's", am:"Տուրետի սինդրոմ"},
+                {ru:"Анемия", en:"Anemia", am:"Անեմիա"}, {ru:"Катаракта", en:"Cataract", am:"Կատարակտ"}, {ru:"Грыжа", en:"Hernia", am:"Ճողվածք"}, {ru:"ДЦП (легкое)", en:"Cerebral Palsy", am:"Մանկական ուղեղային կաթված"},
+                {ru:"Хроническая усталость", en:"Chronic Fatigue", am:"Քրոնիկ հոգնածություն"}, {ru:"Аллергия на лекарства", en:"Medicine Allergy", am:"Ալերգիա դեղերից"}, {ru:"Ожоги 30%", en:"30% Burns", am:"Այրվածքներ 30%"}, {ru:"Мутация ДНК", en:"DNA Mutation", am:"ԴՆԹ մուտացիա"},
+                {ru:"Гемофилия", en:"Hemophilia", am:"Հեմոֆիլիա"}, {ru:"Ожирение", en:"Obesity", am:"Գիրություն"}
+            ],
+            hobbies: [
+                {ru:"Охота", en:"Hunting", am:"Որսորդություն"}, {ru:"Бокс", en:"Boxing", am:"Բոքս"}, {ru:"Йога", en:"Yoga", am:"Յոգա"}, {ru:"Плавание", en:"Swimming", am:"Լող"}, {ru:"Шахматы", en:"Chess", am:"Շախմատ"},
+                {ru:"Рыбалка", en:"Fishing", am:"Ձկնորսություն"}, {ru:"Стрельба", en:"Shooting", am:"Հրաձգություն"}, {ru:"Покер (18+)", en:"Poker (18+)", am:"Պոկեր (18+)"}, {ru:"Взлом", en:"Lockpicking", am:"Կողպեք բացել"}, {ru:"Паркур", en:"Parkour", am:"Պարկուր"},
+                {ru:"Кулинария", en:"Cooking", am:"Խոհարարություն"}, {ru:"Игра на гитаре", en:"Guitar", am:"Կիթառ"}, {ru:"Резьба по дереву", en:"Woodworking", am:"Փայտագործություն"}, {ru:"Садоводство", en:"Gardening", am:"Այգեգործություն"}, {ru:"Бои без правил (18+)", en:"Cage Fighting (18+)", am:"Մարտեր առանց կանոնների"},
+                {ru:"Рисование", en:"Painting", am:"Նկարչություն"}, {ru:"Чтение", en:"Reading", am:"Ընթերցանություն"}, {ru:"Альпинизм", en:"Climbing", am:"Լեռնագնացություն"}, {ru:"Механика", en:"Mechanics", am:"Մեխանիկա"}, {ru:"Оригами", en:"Origami", am:"Օրիգամի"},
+                {ru:"Медитация", en:"Meditation", am:"Մեդիտացիա"}, {ru:"Танцы", en:"Dancing", am:"Պարեր"}, {ru:"Пение", en:"Singing", am:"Երգեցողություն"}, {ru:"Фотография", en:"Photography", am:"Լուսանկարչություն"}, {ru:"Поэзия", en:"Poetry", am:"Պոեզիա"},
+                {ru:"БДСМ (18+)", en:"BDSM (18+)", am:"ԲԴՍՄ (18+)"}, {ru:"Таксидермия", en:"Taxidermy", am:"Տաքսիդերմիա"}, {ru:"Стритрейսինգ", en:"Street Racing", am:"Սթրիթռեյսինգ"}, {ru:"Курение кальяна", en:"Smoking", am:"Ծխել"}, {ru:"Коллекционирование оружия", en:"Weapon Collecting", am:"Զենքի հավաքածու"},
+                {ru:"Вязание", en:"Knitting", am:"Գործել"}, {ru:"Фокусы", en:"Magic Tricks", am:"Ֆոկուսներ"}, {ru:"Кроссворды", am:"Crosswords", en:"Կրոսվորդներ"}, {ru:"Гейминг", en:"Gaming", am:"Գեյմինգ"}, {ru:"Астрономия", en:"Astronomy", am:"Աստղագիտություն"},
+                {ru:"Каллиграфия", en:"Calligraphy", am:"Կալիգրաֆիա"}, {ru:"Дроны", en:"Drones", am:"Դրոններ"}, {ru:"Картинг", en:"Karting", am:"Կարտինգ"}, {ru:"Керамика", en:"Pottery", am:"Խեցեգործություն"}, {ru:"Йога", en:"Yoga", am:"Յոգա"},
+                {ru:"Скрапбукинг", en:"Scrapbooking", am:"Սկրաբուքինգ"}, {ru:"Нумизматика", en:"Coin Collecting", am:"Դրամագիտություն"}, {ru:"Фехтование", en:"Fencing", am:"Սուսերամարտ"}, {ru:"Шитье", en:"Sewing", am:"Կար ու ձև"}, {ru:"Бег", en:"Running", am:"Վազք"},
+                {ru:"Сурвивализм", en:"Survivalism", am:"Գոյատևում"}, {ru:"Виноделие", en:"Winemaking", am:"Գինեգործություն"}, {ru:"Скульптура", en:"Sculpture", am:"Քանդակագործություն"}, {ru:"Настольные игры", en:"Board Games", am:"Սեղանի խաղեր"}, {ru:"Блогерство", en:"Blogging", am:"Բլոգերություն"}
+            ],
+            baggage: [
+                {ru:"Пистолет (3 патрона)", en:"Pistol (3 rounds)", am:"Ատրճանակ (3 փամփուշտ)"}, {ru:"Нож", en:"Knife", am:"Դանակ"}, {ru:"Аптечка", en:"Medkit", am:"Դեղատուփ"}, {ru:"Еда (1 неделя)", en:"Food (1 week)", am:"Սնունդ (1 շաբաթ)"}, {ru:"Газовый баллончик", en:"Pepper Spray", am:"Գազային բալոնիկ"},
+                {ru:"Фонарик", en:"Flashlight", am:"Լապտեր"}, {ru:"Рация", en:"Radio", am:"Ռացիա"}, {ru:"Веревка (15м)", en:"Rope (15m)", am:"Պարան (15մ)"}, {ru:"Мультитул", en:"Multi-tool", am:"Մուլտիտուլ"}, {ru:"Противогаз", en:"Gas Mask", am:"Հակագազ"},
+                {ru:"Спальный мешок", en:"Sleeping Bag", am:"Քնապարկ"}, {ru:"Палатка", en:"Tent", am:"Վրան"}, {ru:"Антибиотики", en:"Antibiotics", am:"Անտիբիոտիկներ"}, {ru:"Витамины", en:"Vitamins", am:"Վիտամիններ"}, {ru:"Гвоздодер", en:"Crowbar", am:"Լոմ"},
+                {ru:"Зажигалка", en:"Lighter", am:"Կրակայրիչ"}, {ru:"Пакет кокаина (18+)", en:"Cocaine (18+)", am:"Կոկաին (18+)"}, {ru:"$1,000,000 наличными", en:"$1M Cash", am:"$1,000,000 կանխիկ"}, {ru:"Золотой слиток", en:"Gold Bar", am:"Ոսկու սալիկ"}, {ru:"Секс-игрушки (18+)", en:"Sex Toys (18+)", am:"Սեքս-խաղալիքներ"},
+                {ru:"Бутылка виски", en:"Whiskey", am:"Վիսկի"}, {ru:"Наручники", en:"Handcuffs", am:"Ձեռնաշղթաներ"}, {ru:"Яд", en:"Poison", am:"Թույն"}, {ru:"Украденные драгоценности", en:"Stolen Jewels", am:"Գողացված թանկարժեք իրեր"}, {ru:"Семена овощей", en:"Seeds", am:"Սերմեր"},
+                {ru:"Удочка", en:"Fishing Rod", am:"Կարթ"}, {ru:"Изолента", en:"Duct Tape", am:"Իզոլենտ"}, {ru:"Сигнальная ракета", en:"Flare Gun", am:"Ազդանշանային ատրճանակ"}, {ru:"Топор", en:"Axe", am:"Կացին"}, {ru:"Молоток", en:"Hammer", am:"Մուրճ"},
+                {ru:"Ноутбук", en:"Laptop", am:"Նոթբուք"}, {ru:"Солнечная зарядка", en:"Solar Charger", am:"Արևային լիցքավորիչ"}, {ru:"Компас", en:"Compass", am:"Կողմնացույց"}, {ru:"Карта местности", en:"Map", am:"Քարտեզ"}, {ru:"Книга по выживанию", en:"Survival Guide", am:"Գոյատևման գիրք"},
+                {ru:"Презервативы (18+)", en:"Condoms (18+)", am:"Պահպանակներ"}, {ru:"Сигареты", en:"Cigarettes", am:"Սիգարետներ"}, {ru:"Карты (игральные)", en:"Playing Cards", am:"Խաղաթղթեր"}, {ru:"Гармошка", en:"Harmonica", am:"Շրթհարմոն"}, {ru:"Зеркало", en:"Mirror", am:"Հայելի"},
+                {ru:"Свисток", en:"Whistle", am:"Սուլիչ"}, {ru:"Мыло и полотенце", en:"Soap & Towel", am:"Օճառ և սրբիչ"}, {ru:"Револьвер (1 патрон)", en:"Revolver (1 bullet)", am:"Ռևոլվեր (1 փամփուշտ)"}, {ru:"Теплое пальто", en:"Warm Coat", am:"Տաք վերարկու"}, {ru:"Лопата", en:"Shovel", am:"Բահ"},
+                {ru:"Глушитель", en:"Silencer", am:"Խլացուցիչ"}, {ru:"Пустая канистра", en:"Empty Canister", am:"Դատարկ կանիիստր"}, {ru:"Бинокль", en:"Binoculars", am:"Հեռադիտակ"}, {ru:"Библия", en:"Bible", am:"Աստվածաշունչ"}, {ru:"Набор инструментов", en:"Tools", am:"Գործիքների հավաքածու"}
+            ],
+            facts: [
+                {ru:"Знает пароль от бункера", en:"Knows Password", am:"Գիտի գաղտնաբառը"}, {ru:"Умеет водить танк", en:"Can drive a tank", am:"Տանկ է վարում"}, {ru:"Скрытый шпион", en:"Secret Spy", am:"Գաղտնի լրտես"}, {ru:"Людоед (18+)", en:"Cannibal (18+)", am:"Մարդակեր (18+)"}, {ru:"Серийный убийца (18+)", en:"Serial Killer (18+)", am:"Սերիական մարդասպան"},
+                {ru:"Беременна", en:"Pregnant", am:"Հղի է"}, {ru:"Иммунитет к радиации", en:"Radiation Immune", am:"Իմունիտետ ռադիացիայի հանդեպ"}, {ru:"Саботажник (взорвет бункер)", en:"Saboteur", am:"Դիվերսանտ"}, {ru:"Бывший зэк (18+)", en:"Ex-Con (18+)", am:"Նախկին բանտարկյալ"}, {ru:"Миллионер", en:"Millionaire", am:"Միլիոնատեր"},
+                {ru:"Герой войны", en:"War Hero", am:"Պատերազմի հերոս"}, {ru:"Предатель", en:"Traitor", am:"Դավաճան"}, {ru:"Знает 5 языков", en:"Speaks 5 languages", am:"Գիտի 5 լեզու"}, {ru:"Стерилен", en:"Sterile", am:"Անպտուղ"}, {ru:"Имеет карту тайников", en:"Has supply map", am:"Ունի պահուստների քարտեզ"},
+                {ru:"Палач", en:"Executioner", am:"Դահիճ"}, {ru:"Сын инженера бункера", en:"Bunker Eng. Son", am:"Բունկերի ինժեների որդին"}, {ru:"Владеет землей бункера", en:"Owns bunker land", am:"Բունկերի հողատերն է"}, {ru:"Свидетель убийства", en:"Murder witness", am:"Սպանության վկա"}, {ru:"Украл антибиотики группы", en:"Stole antibiotics", am:"Գողացել է խմբի դեղերը"},
+                {ru:"Имеет двойника в бункере", en:"Twin inside", am:"Երկվորյակ ունի բունկերում"}, {ru:"Понимает животных", en:"Animal whisperer", am:"Հասկանում է կենդանիներին"}, {ru:"Мастер побега", en:"Escape artist", am:"Փախուստի վարպետ"}, {ru:"Знает путь к другому бункеру", en:"Knows other bunker", am:"Գիտի այլ բունկերի տեղը"}, {ru:"Разыскивается мафией (18+)", en:"Wanted by Mob (18+)", am:"Փնտրվում է մաֆիայի կողմից"},
+                {ru:"Бывший сектант", en:"Ex-Cult member", am:"Նախկին աղանդավոր"}, {ru:"Выиграл в лотерею", en:"Won lottery", am:"Շահել է վիճակախաղով"}, {ru:"Эксперт по взрывчатке", en:"Explosives expert", am:"Պայթուցիկի փորձագետ"}, {ru:"Носитель вируса", en:"Virus carrier", am:"Վիրուսակիր"}, {ru:"Ночное зрение", en:"Night vision", am:"Գիշերային տեսողություն"},
+                {ru:"Высокий болевой порог", en:"High pain threshold", am:"Ցավի բարձր շեմ"}, {ru:"Мастер подделки документов", en:"Forger", am:"Փաստաթղթեր կեղծող"}, {ru:"Бывшая стриптизерша (18+)", en:"Ex-Stripper (18+)", am:"Նախկին ստրիպտիզ պարող"}, {ru:"Охотник за головами", en:"Bounty hunter", am:"Գլխակեր"}, {ru:"Склонность к суициду (18+)", en:"Suicidal (18+)", am:"Ինքնասպանության հակում"},
+                {ru:"Пироманьяк", en:"Pyromaniac", am:"Պիրոմանյակ"}, {ru:"Лунатик", en:"Sleepwalker", am:"Լուսնոտ"}, {ru:"Фотографическая память", en:"Visual memory", am:"Տեսողական հիշողություն"}, {ru:"В долгах", en:"In debt", am:"Պարտքերի մեջ"}, {ru:"Ключ от черного хода", en:"Backdoor key", am:"Ետնամուտքի բանալին"},
+                {ru:"Жертва каннибала (шрамы)", en:"Cannibal victim", am:"Մարդակերի զոհ"}, {ru:"Родственник президента", en:"Presidents relative", am:"Նախագահի ազգական"}, {ru:"Мастер маскировки", en:"Master of disguise", am:"Քողարկման վարպետ"}, {ru:"Его шантажируют", en:"Being blackmailed", am:"Շանտաժի է ենթարկվում"}, {ru:"Имеет машину снаружи", en:"Has a car outside", am:"Մեքենա ունի դրսում"},
+                {ru:"Призрак (нет в базе)", en:"Ghost (no records)", am:"Ուրվական"}, {ru:"Имеет 10кг золота", en:"Has 10kg Gold", am:"Ունի 10կգ ոսկի"}, {ru:"Внук коменданта", en:"Commandants grandson", am:"Պարետի թոռը"}, {ru:"Взломал систему жизнеобеспечения", en:"Hacked life support", am:"Կոտրել է կյանքի ապահովման համակարգը"}, {ru:"Профессиональный игрок", en:"Professional Gambler", am:"Պրոֆեսիոնալ խաղացող"}
+            ]
+        };
+
+        let cur = 'ru'; let state = { char: [], opened: [] };
+
+        function setLang(l) { 
+            cur = l; const t = i18n[cur];
+            document.getElementById('lang-screen').classList.remove('active'); 
+            document.getElementById('login').classList.add('active'); 
+            document.getElementById('l-title').innerText = t.lT; document.getElementById('l-btn').innerText = t.lB; document.getElementById('nameInput').placeholder = t.lP;
+        }
+
+        function init() {
+            const t = i18n[cur]; const age = Math.floor(Math.random() * 83) + 18;
+            const orient = () => { let r = Math.random()*100; return r<90?t.orient[0]:(r<94?t.orient[1]:(r<97?t.orient[2]:t.orient[3])); };
+            const pick = (k) => { let list = db[k]; return list[Math.floor(Math.random()*list.length)][cur]; };
+
+            state.char = [ pick('profs'), `${Math.random()>0.5?t.m:t.f}, ${age} ${t.y}, ${orient()}`, pick('health'), pick('hobbies'), pick('baggage'), pick('facts') ];
+            state.opened = [];
+            document.getElementById('login').classList.remove('active'); document.getElementById('terminal').classList.add('active');
+            document.getElementById('top-name').innerText = document.getElementById('nameInput').value || 'USER';
+            document.getElementById('b-reveal').innerText = t.bR; document.getElementById('b-cat').innerText = t.bC; document.getElementById('b-bun').innerText = t.bB;
+            document.getElementById('h-cat').innerText = t.bC; document.getElementById('h-bun').innerText = t.bB;
+            document.getElementById('cat-text').innerText = t.cat; document.getElementById('bun-text').innerText = t.bun;
+            document.getElementById('m-title').innerText = t.bR;
+            updateCard();
+        }
+
+        function updateCard() {
+            const container = document.getElementById('main-card'); container.innerHTML = "";
+            i18n[cur].labels.forEach((l, i) => { 
+                container.innerHTML += `<div class="trait-line"><div class="label">${l}</div><div class="val">${state.opened.includes(i) ? state.char[i] : "••••••••"}</div></div>`; 
+            });
+        }
+
+        function openTraits() {
+            const options = document.getElementById('traits-options'); options.innerHTML = "";
+            i18n[cur].labels.forEach((l, i) => {
+                if(state.opened.includes(i)) return;
+                let div = document.createElement('div'); div.className = "select-item";
+                div.innerHTML = `<div class="label">${l}</div><div>${state.char[i]}</div>`;
+                div.onclick = () => { state.opened.push(i); updateCard(); toggleModal('m-traits'); };
+                options.appendChild(div);
+            });
+            toggleModal('m-traits');
+        }
+
+        function toggleModal(id) { document.getElementById(id).style.display = (document.getElementById(id).style.display === 'flex' ? 'none' : 'flex'); }
+    </script>
+</body>
+</html>
